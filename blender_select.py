@@ -4,6 +4,7 @@ import math
 import mathutils
 import json
 from mathutils import Vector, Matrix
+import pdb as DBG #set_trace(), run()
 
 
 def delete_object(obj, select=True):
