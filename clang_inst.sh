@@ -47,3 +47,11 @@ cp $SRCDIR/llvm/tools/clang/tools/scan-build/scanview.css $INSTDIR/bin/
  
 echo ""
 echo "Done!"
+
+
+
+# post build
+# export PATH=$PATH:/opt/llvm/bin
+# cmake ../blender \
+#	-DCMAKE_CXX_COMPILER:FILEPATH=/opt/clang/bin/c++-analyzer \
+#	-DCMAKE_C_COMPILER:FILEPATH=/opt/clang/bin/ccc-analyzer
