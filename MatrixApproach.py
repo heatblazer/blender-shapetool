@@ -427,7 +427,7 @@ def make_grid(obj):
     verts = [v for v in bm.verts if v.select]
 
 
-    shape_min, shape_max = get_shape_limits(verts, 45)
+    shape_min, shape_max = get_shape_limits(verts, 180, 1)
 
     for v in verts:
         v.tag = True
@@ -675,7 +675,7 @@ def get_vertex_angle2(y, x):
     return angle * 180/math.pi
 
 
-def get_shape_limits(verts, deg):
+def get_shape_limits(verts, deg, step=45):
     """ Find the shape "beginning" and "end" in XY plane.
 
         If the shape is contained in one quadrant only, look for x-coordinate min and max
@@ -713,18 +713,18 @@ def get_shape_limits(verts, deg):
     shape_min, shape_max = 0, 0
     verts2 = []
 
-    mid = deg / 2
-
-    for i in range(len(verts)):
-        angle = get_vertex_angle2(verts[i].co.y, verts[i].co.x)
-        if angle > mid and angle < deg:
-            print("Vertex between angle")
+    for v in verts:
+        angle = abs(get_vertex_angle2(v.co.y, v.co.x))
+        if angle > step and angle < deg:
+            print("deg: " + str(deg))
             verts2.append(verts[i])
 
     if len(verts2) <= 0:
+        print("End of recursion")
         return shape_min, shape_max
-    
-    return get_shape_limits(verts, mid)
+    print ("Recursion")
+
+    return get_shape_limits(verts2, deg / 2, step)
 
 
 def clean_shape_loop(obj):
