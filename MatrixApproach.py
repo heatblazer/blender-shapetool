@@ -7,7 +7,7 @@ import time
 from mathutils import Vector, Matrix
 import pdb as DBG
 
-# exec(compile(open('/home/ilian/Desktop/blender/MatrixApproach.py').read(), '/home/ilian/Desktop/blender/MatrixApproach.py', 'exec'))
+# exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
 
 
 def duplicate_object(obj, target_name, select=False, copy_vertex_groups=False, copy_custom_props=False, keep_transform=False):
@@ -427,7 +427,7 @@ def make_grid(obj):
     verts = [v for v in bm.verts if v.select]
 
 
-    shape_min, shape_max = get_shape_limits(verts, 0, 45)
+    shape_min, shape_max = get_shape_limits(verts, 45)
 
     for v in verts:
         v.tag = True
@@ -675,7 +675,7 @@ def get_vertex_angle2(y, x):
     return angle * 180/math.pi
 
 
-def get_shape_limits(verts, begin, end):
+def get_shape_limits(verts, deg):
     """ Find the shape "beginning" and "end" in XY plane.
 
         If the shape is contained in one quadrant only, look for x-coordinate min and max
@@ -684,6 +684,7 @@ def get_shape_limits(verts, begin, end):
         Shapes in four quadrants are not handled
     """
     # helper class
+
     class VAMap:
         """
         vertex coords/angle mapper 
@@ -711,21 +712,19 @@ def get_shape_limits(verts, begin, end):
 
     shape_min, shape_max = 0, 0
     verts2 = []
-    if len(verts) <= 0:
-        print ("End of recursion!")
 
+    mid = deg / 2
 
-    for v in verts:
-        angle = get_vertex_angle2(v.co.y, v.co.x)
-        if angle > begin and angle < end:
-            verts2.append(v)
+    for i in range(len(verts)):
+        angle = get_vertex_angle2(verts[i].co.y, verts[i].co.x)
+        if angle > mid and angle < deg:
+            print("Vertex between angle")
+            verts2.append(verts[i])
 
-    bm = bmesh.from_edit_mesh(bpy.context.object.data)
-
-    for v in verts2:
-        v.select = True
-
-    return shape_min, shape_max
+    if len(verts2) <= 0:
+        return shape_min, shape_max
+    
+    return get_shape_limits(verts, mid)
 
 
 def clean_shape_loop(obj):
