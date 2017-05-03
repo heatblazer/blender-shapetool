@@ -1,4 +1,0 @@
-BLENDER SHAPE TOOL
-==================
-
-
