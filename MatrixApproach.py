@@ -665,6 +665,7 @@ def get_shape_limits(verts):
         theta_deg = (theta_rad / math.pi *180) + (deg_fix)
         return theta_deg
 
+    start = time.time()
 
     sorted_verts=[] # returned sorted verts by begin and end
     vtxmap=[] # list of mapped values, helper for the sort and other checks
@@ -690,6 +691,7 @@ def get_shape_limits(verts):
                 sorted_verts.append(vtxmap[j].bmvert)
                 j -= 1
             break
+    print("Function cost:{}".format(time.time() - start))
 
     return sorted_verts
 
@@ -877,17 +879,6 @@ def bezierCurve(cPoints, u):
     return (cPoints[0]*((1-u)**3) + cPoints[1]*3*u*((1-u)**2) + cPoints[2]*(3*u**2)*(1-u) + cPoints[3]*(u**3))
 
 
-#def register():
-#    bpy.utils.register_class(ApplyDrawnShapeOperator)
-#    bpy.ops.debug.apply_drawn_shape('INVOKE_DEFAULT')
-
-#def unregister():
-#    bpy.utils.unregister_class(ApplyDrawnShapeOperator)
-
-
-#if __name__ == "__main__":
-#    #register()
-#    DBG.run('register()')
 
 
 
