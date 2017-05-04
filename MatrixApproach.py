@@ -427,7 +427,7 @@ def make_grid(obj):
     verts = [v for v in bm.verts if v.select]
 
 
-    shape_min, shape_max = get_shape_limits(verts, 180, 1)
+    shape_min, shape_max = get_shape_limits(verts)
 
     for v in verts:
         v.tag = True
@@ -649,33 +649,7 @@ def create_shape_vertex_map(shape_min, shape_max, verts):
     return sorted_initial_vert_map
 
 
-#get the vertex angle between 2 vertices
-def get_vertex_angle(vtx1=(), vtx2=()):
-
-    def __dot(v1=(), v2=()):
-        return  (v1[0] * v2[0]) + (v1[1] * v2[1])
-
-    def __len(v1=()):
-        return  sqrt((v1[0] **2) + (v1[1] **2))
-
-    def __norm(v1=()):
-        v = (v1[0] / __len(v1), v1[1] / __len(v1))
-        return  v
-
-    if len(vtx1) != len(vtx2) and len(vtx1) != 2:
-        raise Exception("Error vector operation: Different lengths!")
-
-    angle = acos(__dot(__norm(vtx1), __norm(vtx2)))
-    degs = angle * 180 / math.pi
-    return degs
-
-# get angle of a point in 2D coords.
-def get_vertex_angle2(y, x):
-    angle = atan2(y, x)
-    return angle * 180/math.pi
-
-
-def get_shape_limits(verts, deg, step=45):
+def get_shape_limits(verts):
     """ Find the shape "beginning" and "end" in XY plane.
 
         If the shape is contained in one quadrant only, look for x-coordinate min and max
@@ -683,48 +657,58 @@ def get_shape_limits(verts, deg, step=45):
         If the hape is in three quadrants - look for min or max in x-coordinate or y-coordinate
         Shapes in four quadrants are not handled
     """
-    # helper class
 
-    class VAMap:
-        """
-        vertex coords/angle mapper 
-        """
-        def __init__(self):
-            self.vers = []
-            self.angles = []
+    # helper mapper class to map a vertex to specific angle
+    # then sort by criteria and return the appropriate vtx
+    class VtxAngleMap(object):
+        def __init__(self, bmv, angle):
+            self.bmvert = bmv
+            self.angle = angle
 
-        def addVtxAngle(self, verts=None, angle=None):
-            self.vers.append(verts)
-            self.angles.append(angle)
-
-        def getVertexes(self):
-            return  self.vers
-
-        def getAngles(self):
-            return self.angles
-
-        def size(self):
-            if len(self.angles) == len(self.vers):
-                return len(self.vers)
-            else:
-                raise Exception("Critical exception! Lengths of lists are not equal!")
+    # dummy bubble sort - will work with it to qsort or if there is python way
+    def __sort(data): # works only for the VtxAnlgeMaps....
+        i, j = 0, 0
+        while i < len(data):
+            j = i
+            while j < len(data):
+                if data[i].angle > data[j].angle:
+                    tmp = data[i]
+                    data[i] = data[j]
+                    data[j] = tmp
+                j += 1
+            i +=1
 
 
-    shape_min, shape_max = 0, 0
-    verts2 = []
+    def get_vertex_angle2(y, x):
+        theta_rad = atan2(y, x)
+        deg_fix = 0
+        if theta_rad < 0:
+            deg_fix = 360
+        theta_deg = (theta_rad / math.pi *180) + (deg_fix)
+        return theta_deg
+
+    sorted_verts=[] # returned sorted verts by begin and end
+    vtxmap=[] # list of mapped values
 
     for v in verts:
-        angle = abs(get_vertex_angle2(v.co.y, v.co.x))
-        if angle > step and angle < deg:
-            print("deg: " + str(deg))
-            verts2.append(verts[i])
+        vtxmap.append(VtxAngleMap(v, get_vertex_angle2(v.co.y, v.co.x)))
 
-    if len(verts2) <= 0:
-        print("End of recursion")
-        return shape_min, shape_max
-    print ("Recursion")
+    __sort(vtxmap)
 
-    return get_shape_limits(verts2, deg / 2, step)
+    for i in range(0, len(vtxmap)-1):
+        if vtxmap[i+1].angle - vtxmap[i].angle > 2:
+            j = i
+            h = j
+            while j >=0:
+                sorted_verts.append(vtxmap[j].bmvert)
+                j -= 1
+            j = len(vtxmap)-1
+            while j > h:
+                sorted_verts.append(vtxmap[j].bmvert)
+                j -= 1
+            break
+
+    return sorted_verts
 
 
 def clean_shape_loop(obj):
