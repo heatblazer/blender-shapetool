@@ -674,14 +674,8 @@ def get_shape_limits(verts):
         vtxmap.append(VtxAngleMap(v, get_vertex_angle2(v.co.y, v.co.x), v.index))
 
     __sort(vtxmap) # sort by the angle
-    angles=[]
-    for v in verts:
-        angles.append(get_vertex_angle2(v.co.y, v.co.x))
 
-    angles.sort()
     f = open('logfile.txt', 'w')
-    for a in angles:
-        f.write(str(a)+"\n")
 
     # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
     for i in range(0, len(vtxmap)-1):
