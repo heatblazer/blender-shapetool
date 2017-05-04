@@ -475,13 +475,6 @@ def make_grid(obj):
                 #print("Inner columns: {}".format(indx+step))
         step += (indx + 1)
 
-    #for v in bm.verts:
-    #    v.select = False
-    #for v in bm.verts:
-    #    for vv in outer_columns:
-    #        if v.index == outer_columns[vv]['vertex']:
-    #            v.select = True
-    #raise
 
     # Sort by z-coordinate
     verts_z = {v.index: v.co.z for v in verts}
@@ -663,25 +656,30 @@ def get_shape_limits(verts):
                 j += 1
             i +=1
 
-
+    # get an angle of a point in 2D by origin (0, 0)
     def get_vertex_angle2(y, x):
         theta_rad = atan2(y, x)
         deg_fix = 0
         if theta_rad < 0:
-            deg_fix = 360
+            deg_fix = 360 # fix for negative degrees
         theta_deg = (theta_rad / math.pi *180) + (deg_fix)
         return theta_deg
 
-    sorted_verts=[] # returned sorted verts by begin and end
-    vtxmap=[] # list of mapped values
 
-    for v in verts:
+    sorted_verts=[] # returned sorted verts by begin and end
+    vtxmap=[] # list of mapped values, helper for the sort and other checks
+
+    for v in verts: # organize vtxmap with bmvert, angle and optional index
         vtxmap.append(VtxAngleMap(v, get_vertex_angle2(v.co.y, v.co.x), v.index))
 
-    __sort(vtxmap)
+    __sort(vtxmap) # sort by the angle
 
+    # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
     for i in range(0, len(vtxmap)-1):
-        if vtxmap[i+1].angle - vtxmap[i].angle > 2:
+        if vtxmap[i+1].angle - vtxmap[i].angle > 2: # it's a gap
+            # do the list vertex that starts the gap
+            # will be the start of the new list
+            # and the second vertex will be at the end
             j = i
             h = j
             while j >=0:
