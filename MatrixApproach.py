@@ -7,7 +7,7 @@ import time
 from mathutils import Vector, Matrix
 import pdb as DBG
 
-# exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
+# exec(compile(open('/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py', 'exec'))
 
 
 def duplicate_object(obj, target_name, select=False, copy_vertex_groups=False, copy_custom_props=False, keep_transform=False):
@@ -587,22 +587,6 @@ def make_grid(obj):
         middle_vertex_X = shape_grid[inner_rows[round(len(shape_grid)/2)]['vertex']]
     except KeyError:
         middle_vertex_X = shape_grid[outer_rows[round(len(shape_grid)/2)]['vertex']]
-    # Visualization only (delete later)
-    # for v in bm.verts:
-    #    v.select = False
-    #
-    # for v in shape_grid.keys():
-    #    if 'border_vertex' not in shape_grid[v].keys():
-    #        print(shape_grid[v])
-    #        bm.verts[v].select = True
-    #        vertex = shape_grid[v]
-    #        if 'row_columns' in vertex.keys():
-    #            for column in vertex['row_columns']:
-    #                bm.verts[outer_columns[column]['vertex']].select = True
-    #        if 'column_rows' in vertex.keys():
-    #            for row in vertex['column_rows']:
-    #                bm.verts[outer_rows[row]['vertex']].select = True
-    #        break
 
     bmesh.update_edit_mesh(bpy.context.object.data)
 
@@ -661,9 +645,10 @@ def get_shape_limits(verts):
     # helper mapper class to map a vertex to specific angle
     # then sort by criteria and return the appropriate vtx
     class VtxAngleMap(object):
-        def __init__(self, bmv, angle):
+        def __init__(self, bmv, angle, idx):
             self.bmvert = bmv
             self.angle = angle
+            self.index = idx
 
     # dummy bubble sort - will work with it to qsort or if there is python way
     def __sort(data): # works only for the VtxAnlgeMaps....
@@ -691,7 +676,7 @@ def get_shape_limits(verts):
     vtxmap=[] # list of mapped values
 
     for v in verts:
-        vtxmap.append(VtxAngleMap(v, get_vertex_angle2(v.co.y, v.co.x)))
+        vtxmap.append(VtxAngleMap(v, get_vertex_angle2(v.co.y, v.co.x), v.index))
 
     __sort(vtxmap)
 
