@@ -7,7 +7,20 @@ import time
 from mathutils import Vector, Matrix
 import pdb as DBG
 
-# exec(compile(open('/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py', 'exec'))
+# exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
+
+
+class Logger:
+    f = open('logfile.txt', 'w')
+    print("Open logger")
+    def __del__(self):
+        print("Closing logger")
+        f.close()
+
+    @staticmethod
+    def log(msg):
+        Logger.f.write(str(msg))
+        Logger.f.flush()
 
 
 def duplicate_object(obj, target_name, select=False, copy_vertex_groups=False, copy_custom_props=False, keep_transform=False):
@@ -143,6 +156,7 @@ def select_object(obj, select=True):
 
 
 class ControlPoints():
+
     """ Handle the control points
 
     """
@@ -475,7 +489,6 @@ def make_grid(obj):
                 #print("Inner columns: {}".format(indx+step))
         step += (indx + 1)
 
-
     # Sort by z-coordinate
     verts_z = {v.index: v.co.z for v in verts}
     sorted_verts_z = sorted(verts_z, key=(lambda k: verts_z[k]), reverse=True)
@@ -675,7 +688,6 @@ def get_shape_limits(verts):
 
     __sort(vtxmap) # sort by the angle
 
-    f = open('logfile.txt', 'w')
 
     # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
     for i in range(0, len(vtxmap)-1):
@@ -694,7 +706,8 @@ def get_shape_limits(verts):
                 j -= 1
             break
 
-    f.write("Function cost:{}".format(time.time() - start))
+
+    Logger.log("Function cost:{}".format(time.time() - start))
 
     return sorted_verts
 
