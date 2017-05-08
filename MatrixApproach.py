@@ -7,7 +7,7 @@ import time
 from mathutils import Vector, Matrix
 import pdb as DBG
 
-# exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
+# exec(compile(open('/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py', 'exec'))
 
 
 class Logger:
@@ -656,6 +656,21 @@ def get_shape_limits(verts):
             self.angle = angle
             self.index = idx
 
+    # reconsider using shellsort if vertexes goes over 3-4000...
+    def __ssort(data, len):
+        gap,i,j,tmp = 0,0,0,0
+        gap = int(len / 2)
+        while gap > 0:
+            for i in range (gap, len):
+                j = i - gap
+                while j >= 0 and data[j].angle > data[j + gap].angle:
+                    tmp = data[j]
+                    data[j] = data[j+gap]
+                    data[j+gap] = tmp
+                    j -= gap
+                i += 1
+            gap = int(gap/2)
+
     # dummy bubble sort - will work with it to qsort or if there is python way
     def __sort(data): # works only for the VtxAnlgeMaps....
         i, j = 0, 0
@@ -686,7 +701,7 @@ def get_shape_limits(verts):
     for v in verts: # organize vtxmap with bmvert, angle and optional index
         vtxmap.append(VtxAngleMap(v, get_vertex_angle2(v.co.y, v.co.x), v.index))
 
-    __sort(vtxmap) # sort by the angle
+    __ssort(vtxmap, len(vtxmap)) # sort by the angle
 
 
     # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
@@ -698,14 +713,16 @@ def get_shape_limits(verts):
             j = i
             h = j
             while j >=0:
-                sorted_verts.append(vtxmap[j].bmvert)
+                sorted_verts.append(vtxmap[j].angle)
                 j -= 1
             j = len(vtxmap)-1
             while j > h:
-                sorted_verts.append(vtxmap[j].bmvert)
+                sorted_verts.append(vtxmap[j].angle)
                 j -= 1
             break
 
+    for i in sorted_verts:
+        Logger.log(str(i)+"\n")
 
     Logger.log("Function cost:{}".format(time.time() - start))
 
