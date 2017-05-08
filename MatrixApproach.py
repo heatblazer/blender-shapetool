@@ -11,6 +11,7 @@ import pdb as DBG
 
 
 class Logger:
+    LOGGING_ENABLED = True
     f = open('logfile.txt', 'w')
     print("Open logger")
     def __del__(self):
@@ -671,19 +672,6 @@ def get_shape_limits(verts):
                 i += 1
             gap = int(gap/2)
 
-    # dummy bubble sort - will work with it to qsort or if there is python way
-    def __sort(data): # works only for the VtxAnlgeMaps....
-        i, j = 0, 0
-        while i < len(data):
-            j = i
-            while j < len(data):
-                if data[i].angle > data[j].angle:
-                    tmp = data[i]
-                    data[i] = data[j]
-                    data[j] = tmp
-                j += 1
-            i +=1
-
     # get an angle of a point in 2D by origin (0, 0)
     def get_vertex_angle2(y, x):
         theta_rad = atan2(y, x)
@@ -703,7 +691,6 @@ def get_shape_limits(verts):
 
     __ssort(vtxmap, len(vtxmap)) # sort by the angle
 
-
     # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
     for i in range(0, len(vtxmap)-1):
         if vtxmap[i+1].angle - vtxmap[i].angle > 2: # it's a gap
@@ -713,16 +700,17 @@ def get_shape_limits(verts):
             j = i
             h = j
             while j >=0:
-                sorted_verts.append(vtxmap[j].angle)
+                sorted_verts.append(vtxmap[j].bmvert)
                 j -= 1
             j = len(vtxmap)-1
             while j > h:
-                sorted_verts.append(vtxmap[j].angle)
+                sorted_verts.append(vtxmap[j].bmvert)
                 j -= 1
             break
 
-    for i in sorted_verts:
-        Logger.log(str(i)+"\n")
+    if Logger.LOGGING_ENABLED is True:
+        for i in sorted_verts:
+            Logger.log(str(get_vertex_angle2(i.co.y, i.co.x))+"\n")
 
     Logger.log("Function cost:{}".format(time.time() - start))
 
