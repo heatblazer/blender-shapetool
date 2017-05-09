@@ -6,12 +6,11 @@ import json
 import time
 from mathutils import Vector, Matrix
 import pdb as DBG
-
-# exec(compile(open('/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py', 'exec'))
+# exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
 
 
 class Logger:
-    LOGGING_ENABLED = True
+    LOGGER_ENABLED = True
     f = open('logfile.txt', 'w')
     print("Open logger")
     def __del__(self):
@@ -708,9 +707,9 @@ def get_shape_limits(verts):
                 j -= 1
             break
 
-    if Logger.LOGGING_ENABLED is True:
-        for i in sorted_verts:
-            Logger.log(str(get_vertex_angle2(i.co.y, i.co.x))+"\n")
+    if Logger.LOGGER_ENABLED is True:
+        for a in sorted_verts:
+            Logger.log(str(get_vertex_angle2(a.co.y, a.co.x))+"\n")
 
     Logger.log("Function cost:{}".format(time.time() - start))
 
