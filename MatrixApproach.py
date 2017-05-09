@@ -639,7 +639,7 @@ def create_shape_vertex_map(shape_min, shape_max, verts):
     return sorted_initial_vert_map
 
 #####################################################################################
-def get_shape_limits(verts):
+def get_shape_limits(verts, offset=2):
     """ Find the shape "beginning" and "end" in XY plane.
 
         If the shape is contained in one quadrant only, look for x-coordinate min and max
@@ -691,8 +691,14 @@ def get_shape_limits(verts):
     __ssort(vtxmap, len(vtxmap)) # sort by the angle
 
     # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
-    for i in range(0, len(vtxmap)-1):
-        if vtxmap[i + 1].angle - vtxmap[i].angle > 2: # it's a gap
+    for i in range(0, len(vtxmap)):
+        safe_index = 0
+        if (i + 1) >= len(vtxmap):
+            safe_index = len(vtxmap) - 1
+        else:
+            safe_index = i + 1
+
+        if vtxmap[safe_index].angle - vtxmap[i].angle > offset: # it's a gap
             # do the list vertex that starts the gap
             # will be the start of the new list
             # and the second vertex will be at the end
