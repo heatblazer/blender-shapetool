@@ -638,7 +638,7 @@ def create_shape_vertex_map(shape_min, shape_max, verts):
 
     return sorted_initial_vert_map
 
-
+#####################################################################################
 def get_shape_limits(verts):
     """ Find the shape "beginning" and "end" in XY plane.
 
