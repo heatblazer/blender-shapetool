@@ -692,24 +692,27 @@ def get_shape_limits(verts):
 
     # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
     for i in range(0, len(vtxmap)-1):
-        if vtxmap[i+1].angle - vtxmap[i].angle > 2: # it's a gap
+        if vtxmap[i + 1].angle - vtxmap[i].angle > 2: # it's a gap
             # do the list vertex that starts the gap
             # will be the start of the new list
             # and the second vertex will be at the end
             j = i
             h = j
             while j >=0:
-                sorted_verts.append(vtxmap[j].bmvert)
+                sorted_verts.append(vtxmap[j].angle)
                 j -= 1
             j = len(vtxmap)-1
             while j > h:
-                sorted_verts.append(vtxmap[j].bmvert)
+                sorted_verts.append(vtxmap[j].angle)
                 j -= 1
             break
+    else: # we are in one or two quadrants...
+        for i in range(0, len(vtxmap)):
+            sorted_verts.append(vtxmap[i].angle)
 
     if Logger.LOGGER_ENABLED is True:
         for a in sorted_verts:
-            Logger.log(str(get_vertex_angle2(a.co.y, a.co.x))+"\n")
+            Logger.log(str(a)+"\n")
 
     Logger.log("Function cost:{}".format(time.time() - start))
 
