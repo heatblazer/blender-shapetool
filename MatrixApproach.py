@@ -9,6 +9,35 @@ import pdb as DBG
 # exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
 
 
+class ShapeToolAsserts():
+    # enumerate the error codes here
+    class ERR_CODES:
+        OK = 0
+        NO_KEY_ERROR = 1
+
+    ERROR = 0
+
+    @staticmethod
+    def errno():
+        return ShapeToolAsserts.ERROR
+
+    @staticmethod
+    def ok_all():
+        ShapeToolAsserts.ERROR = ShapeToolAsserts.ERR_CODES.OK
+
+    @staticmethod
+    def check_dict_entries(input_vertex_list=list(), checked_vertex_dict=dict()):
+        for index in input_vertex_list:
+            try:
+                v = checked_vertex_dict[index]
+            except KeyError:
+                ShapeToolAsserts.ERROR = ShapeToolAsserts.ERR_CODES.NO_KEY_ERROR
+                return ShapeToolAsserts.ERR_CODES.NO_KEY_ERROR
+
+        ShapeToolAsserts.ERROR = ShapeToolAsserts.ERR_CODES.NO_KEY_ERROR
+        return ShapeToolAsserts.ERR_CODES.OK
+
+
 class Logger:
     LOGGER_ENABLED = True
     f = open('logfile.txt', 'w')
@@ -719,6 +748,16 @@ def get_shape_limits(verts, offset=2):
     if Logger.LOGGER_ENABLED is True:
         for a in sorted_verts:
             Logger.log(str(a)+"\n")
+
+
+    if True:
+        vtx=[]
+        d = {}
+        ShapeToolAsserts.check_dict_entries(vtx, d)
+        print(ShapeToolAsserts.errno())
+
+        ShapeToolAsserts.ok_all()
+        print(ShapeToolAsserts.errno())
 
     Logger.log("Function cost:{}".format(time.time() - start))
 
