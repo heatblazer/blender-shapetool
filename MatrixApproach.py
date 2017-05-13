@@ -6,24 +6,33 @@ import json
 import time
 from mathutils import Vector, Matrix
 import pdb as DBG
-# exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
+# exec(compile(open('/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py', 'exec'))
 
+# Utils
+#######################################################################################################################
 
 class ShapeToolAsserts():
     # enumerate the error codes here
     class ERR_CODES:
         OK = 0
         NO_KEY_ERROR = 1
+        NO_INDEX_ERROR = 2
 
     ERROR = 0
 
     @staticmethod
-    def errno():
+    def errno(): # global C like errno handler
         return ShapeToolAsserts.ERROR
 
     @staticmethod
-    def ok_all():
+    def check_arr_index(arr, idx):
+        try:
+            t = arr[idx]
+        except IndexError:
+            ShapeToolAsserts.ERROR = ShapeToolAsserts.ERR_CODES.NO_INDEX_ERROR
+            return  ShapeToolAsserts.ERR_CODES.NO_INDEX_ERROR
         ShapeToolAsserts.ERROR = ShapeToolAsserts.ERR_CODES.OK
+        return ShapeToolAsserts.ERR_CODES.OK
 
     @staticmethod
     def check_dict_entries(input_vertex_list=list(), checked_vertex_dict=dict()):
@@ -51,7 +60,32 @@ class Logger:
         Logger.f.write(str(msg))
         Logger.f.flush()
 
+#######################################################################################################################
+class TestApplication(object):
+    def __init__(self):
+        self.curveXdata = [{'end': {'control': {'x': 0.25, 'y': 0.33},
+                               'position': {'x': 0.5, 'y': 0.33}},
+                       'start': {'control': {'x': 0, 'y': 0.75},
+                                 'position': {'x': 0, 'y': 1}}},
+                      {'end': {'control': {'x': 1, 'y': 0.75},
+                               'position': {'x': 1, 'y': 1}},
+                       'start': {'control': {'x': 0.75, 'y': 0.33},
+                                 'position': {'x': 0.5, 'y': 0.33}}}]
+        self.curveYdata = [{'end': {'control': {'x': 0.25, 'y': 0.33},
+                               'position': {'x': 0.5, 'y': 0.33}},
+                       'start': {'control': {'x': 0, 'y': 0.75},
+                                 'position': {'x': 0, 'y': 1}}},
+                      {'end': {'control': {'x': 1, 'y': 0.75},
+                               'position': {'x': 1, 'y': 1}},
+                       'start': {'control': {'x': 0.75, 'y': 0.33},
+                                 'position': {'x': 0.5, 'y': 0.33}}}]
 
+    def get_curveXY(self):
+        return  self.curveXdata, self.curveYdata
+
+
+
+#######################################################################################################################
 def duplicate_object(obj, target_name, select=False, copy_vertex_groups=False, copy_custom_props=False, keep_transform=False):
     """ Creates duplicate of an object
     """
@@ -357,22 +391,9 @@ def execute():
     define_new_group('shape_intersection_group', target_obj)
 
     # New stuff from here
-    curveXdata = [{'end': {'control': {'x': 0.25, 'y': 0.33},
-                           'position': {'x': 0.5, 'y': 0.33}},
-                   'start': {'control': {'x': 0, 'y': 0.75},
-                             'position': {'x': 0, 'y': 1}}},
-                  {'end': {'control': {'x': 1, 'y': 0.75},
-                           'position': {'x': 1, 'y': 1}},
-                   'start': {'control': {'x': 0.75, 'y': 0.33},
-                             'position': {'x': 0.5, 'y': 0.33}}}]
-    curveYdata = [{'end': {'control': {'x': 0.25, 'y': 0.33},
-                           'position': {'x': 0.5, 'y': 0.33}},
-                   'start': {'control': {'x': 0, 'y': 0.75},
-                             'position': {'x': 0, 'y': 1}}},
-                  {'end': {'control': {'x': 1, 'y': 0.75},
-                           'position': {'x': 1, 'y': 1}},
-                   'start': {'control': {'x': 0.75, 'y': 0.33},
-                             'position': {'x': 0.5, 'y': 0.33}}}]
+    app = TestApplication()
+
+    curveXdata, curveYdata = app.get_curveXY()
 
     time_start = time.time()
     shape_grid, middle_vertex_X, middle_vertex_Y = make_grid(target_obj)
@@ -748,16 +769,6 @@ def get_shape_limits(verts, offset=2):
     if Logger.LOGGER_ENABLED is True:
         for a in sorted_verts:
             Logger.log(str(a)+"\n")
-
-
-    if True:
-        vtx=[]
-        d = {}
-        ShapeToolAsserts.check_dict_entries(vtx, d)
-        print(ShapeToolAsserts.errno())
-
-        ShapeToolAsserts.ok_all()
-        print(ShapeToolAsserts.errno())
 
     Logger.log("Function cost:{}".format(time.time() - start))
 
