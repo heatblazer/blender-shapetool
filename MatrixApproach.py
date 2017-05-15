@@ -18,11 +18,15 @@ class ShapeToolAsserts():
         NO_KEY_ERROR = 1
         NO_INDEX_ERROR = 2
 
+        codes = (("OK", 0),
+                 ("NO_KEY_ERROR", 1),
+                 ("NO_INDEX_ERROR", 2))
+
     ERROR = 0
 
     @staticmethod
     def errno(): # global C like errno handler
-        return ShapeToolAsserts.ERROR
+        return ShapeToolAsserts.ERR_CODES.codes[ShapeToolAsserts.ERROR][0]
 
     @staticmethod
     def check_arr_index(arr, idx):
@@ -57,7 +61,7 @@ class Logger:
 
     @staticmethod
     def log(msg):
-        Logger.f.write(str(msg))
+        Logger.f.write(str(msg)+"\n")
         Logger.f.flush()
 
 #######################################################################################################################
@@ -379,7 +383,7 @@ def execute():
     bpy.ops.mesh.delete_loose()
     bpy.ops.object.vertex_group_select()
 
-    print('Correcting shape loop over socket surface')
+    Logger.log('Correcting shape loop over socket surface')
     clean_shape_loop(target_obj)
 
     bpy.ops.mesh.loop_to_region()
@@ -480,6 +484,14 @@ def blend_curves(target_obj, shape_grid, middle_vertex_X, middle_vertex_Y, curve
 
     return extrude_values
 
+# helper class to prevent dicts
+class BorderVtxMap(object):
+    def __init__(self, bmv=None, col=0, isBorder=False):
+        self.bmvert = bmv
+        self.index = col
+        self.isBorder = isBorder
+
+
 
 def make_grid(obj):
     """ Create a 2D map of the shape vertices, where each vertex has a unique column and row.
@@ -516,10 +528,12 @@ def make_grid(obj):
             shape_grid[v.index] = {"vertex": v,
                                    "column": indx,
                                    "border_vertex": True}
+
             outer_columns[indx] = {"vertex": v.index}
         else:
             shape_grid[v.index] = {"vertex": v,
                                    "column": indx}
+
             inner_columns[indx] = {"vertex": v.index}
 
     # Sort by z-coordinate
@@ -528,7 +542,7 @@ def make_grid(obj):
 
     no_key_err = ShapeToolAsserts.ERR_CODES.NO_KEY_ERROR
     if (ShapeToolAsserts.check_dict_entries(sorted_verts_z, shape_grid) == no_key_err):
-        logger.error("Error occured, falling back to default extrusion")
+        Logger.log("Error occured: {}, falling back to default extrusion".format(ShapeToolAsserts.errno()))
         x_displacement = str(0)
         y_displacement = str(0)
         smooth_amount = 5
@@ -619,14 +633,17 @@ def make_grid(obj):
             vertex['row_columns'] = (row_A, row_B)
             vertex['column_rows'] = (column_A, column_B)
 
+    grid_mid = round(len(shape_grid)/2)
+    Logger.log("Grid mid: {}".format(grid_mid))
+
     try:
-        middle_vertex_Y = shape_grid[inner_columns[round(len(shape_grid)/2)]['vertex']]
+        middle_vertex_Y = shape_grid[inner_columns[grid_mid]['vertex']]
     except KeyError:
-        middle_vertex_Y = shape_grid[outer_columns[round(len(shape_grid)/2)]['vertex']]
+        middle_vertex_Y = shape_grid[outer_columns[grid_mid]['vertex']]
     try:
-        middle_vertex_X = shape_grid[inner_rows[round(len(shape_grid)/2)]['vertex']]
+        middle_vertex_X = shape_grid[inner_rows[grid_mid]['vertex']]
     except KeyError:
-        middle_vertex_X = shape_grid[outer_rows[round(len(shape_grid)/2)]['vertex']]
+        middle_vertex_X = shape_grid[outer_rows[grid_mid]['vertex']]
 
     bmesh.update_edit_mesh(bpy.context.object.data)
 
@@ -690,14 +707,18 @@ def get_shape_limits(verts, offset=2):
             self.angle = angle
             self.index = idx
 
+    def __comparator(a, b):
+        return  a > b
+
     # reconsider using shellsort if vertexes goes over 3-4000...
-    def __ssort(data, len):
+    def __ssort(data, len, cmp):
+
         gap,i,j,tmp = 0,0,0,0
         gap = int(len / 2)
         while gap > 0:
             for i in range (gap, len):
                 j = i - gap
-                while j >= 0 and data[j].angle > data[j + gap].angle:
+                while j >= 0 and cmp(data[j].angle, data[j+gap].angle):
                     tmp = data[j]
                     data[j] = data[j+gap]
                     data[j+gap] = tmp
@@ -714,15 +735,28 @@ def get_shape_limits(verts, offset=2):
         theta_deg = (theta_rad / math.pi *180) + (deg_fix)
         return theta_deg
 
+
     start = time.time()
 
     sorted_verts=[] # returned sorted verts by begin and end
     vtxmap=[] # list of mapped values, helper for the sort and other checks
+    height_map=[]
+    min_z, max_z, height_diff = 0, 0, 0
 
     for v in verts: # organize vtxmap with bmvert, angle and optional index
         vtxmap.append(VtxAngleMap(v, get_vertex_angle2(v.co.y, v.co.x), v.index))
+        height_map.append(v.co.z)
 
-    __ssort(vtxmap, len(vtxmap)) # sort by the angle
+    min_z = min(height_map)
+    max_z = max(height_map)
+
+    Logger.log("Min: "+str(min_z) + " Max: "+str(max_z)+" Diff: "+str(height_diff)+"\n\n")
+
+    __ssort(vtxmap, len(vtxmap), __comparator) # sort by the angle
+
+
+    for v in vtxmap:
+        Logger.log("Angles: "+ str(v.angle))
 
     # find the gap - it's gap if the difference between 2 angles is more than 2 (hardcoded for now)
     for i in range(0, len(vtxmap)):
@@ -750,12 +784,7 @@ def get_shape_limits(verts, offset=2):
         for i in range(0, len(vtxmap)):
             sorted_verts.append(vtxmap[i].bmvert)
 
-    if Logger.LOGGER_ENABLED is True:
-        for a in sorted_verts:
-            Logger.log(str(a)+"\n")
-
     Logger.log("Function cost:{}".format(time.time() - start))
-
     return sorted_verts
 
 
@@ -776,7 +805,7 @@ def clean_shape_loop(obj):
     # Handle faces - dissolve if any and then loop to see if some are left.
     # If this is true, connect vertices with edges to split the faces
     if faces:
-        print('Correcting {} faces'.format(len(faces)))
+        Logger.log('Correcting '+str(len(faces)) + ' faces')
         bmesh.ops.dissolve_faces(bm, faces=faces)
         faces = [f for f in bm.faces if f.select]
         for face in faces:
