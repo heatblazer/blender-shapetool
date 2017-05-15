@@ -692,11 +692,13 @@ def create_shape_vertex_map(shape_min, shape_max, verts):
 #####################################################################################
 def get_shape_limits(verts, offset=2):
     """ Find the shape "beginning" and "end" in XY plane.
-
-        If the shape is contained in one quadrant only, look for x-coordinate min and max
-        If the shape is in two quadrants - look for min/max of x-coordinate or y-coordinate, depending on the shape position
-        If the hape is in three quadrants - look for min or max in x-coordinate or y-coordinate
-        Shapes in four quadrants are not handled
+        Rotate around the 0,0 origin, looping trough all vertices and finds their angles
+        against origin. Collect them into a mapped class, then sort by angle criteria,
+        the shape in 1 or 2 quadrants will have all vertices sorted. If 3 or 4 quadrants
+        are present, there will be a gap between a pair of vertices by given offset of
+        2 or more. There is a gap. Then rearrange the array by making the index of the 
+        gap a beginning of the array till the end of it. After that return the reorganized
+        BMVert data as a list
     """
 
     # helper mapper class to map a vertex to specific angle
@@ -843,13 +845,13 @@ def clean_shape_loop(obj):
     verts_at_shortcuts = [v[0] for v in vertices if v[1] > 2]
 
     if verts_at_limit:
-        print('Number of vertices at shape loop gap: {}'.format(len(verts_at_limit)))
+        Logger.log('Number of vertices at shape loop gap: {}'.format(len(verts_at_limit)))
         if len(verts_at_limit) == 1:
-            print('[Unhandled] Number of vertices at shape loop gap: {}'.format(len(verts_at_limit)))
+            Logger.log('[Unhandled] Number of vertices at shape loop gap: {}'.format(len(verts_at_limit)))
         elif len(verts_at_limit) == 2:
             cEdges = bmesh.ops.connect_vert_pair(bm, verts=verts_at_limit)
             if not cEdges['edges']:
-                print("Empty result, expecting bad geometry: {}, vertices {}".format(cEdges, verts_at_limit))
+                Logger.log("Empty result, expecting bad geometry: {}, vertices {}".format(cEdges, verts_at_limit))
             else:
                 for edge in cEdges['edges']:
                     edge.select = True
@@ -869,13 +871,13 @@ def clean_shape_loop(obj):
             for pair in pairs:
                 cEdges = bmesh.ops.connect_vert_pair(bm, verts=pair)
                 if not cEdges['edges']:
-                    print("Empty result, expecting bad geometry: {}, vertices: ".format(cEdges, pair))
+                    Logger.log("Empty result, expecting bad geometry: {}, vertices: ".format(cEdges, pair))
                 else:
                     for edge in cEdges['edges']:
                         edge.select = True
                 bm.edges.ensure_lookup_table()
     if verts_at_shortcuts:
-        print('Number of vertices at faces/shortcuts: {}'.format(len(verts_at_shortcuts)))
+        Logger.log('Number of vertices at faces/shortcuts: {}'.format(len(verts_at_shortcuts)))
         edges_at_faces = []
         for e in edges:
             if e.verts[0] in verts_at_shortcuts and e.verts[1] in verts_at_shortcuts:
