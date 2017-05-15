@@ -6,7 +6,7 @@ import json
 import time
 from mathutils import Vector, Matrix
 import pdb as DBG
-# exec(compile(open('/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/gitprojects/blender-shapetool/MatrixApproach.py', 'exec'))
+# exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
 
 # Utils
 #######################################################################################################################
@@ -62,6 +62,7 @@ class Logger:
 
 #######################################################################################################################
 class TestApplication(object):
+
     def __init__(self):
         self.curveXdata = [{'end': {'control': {'x': 0.25, 'y': 0.33},
                                'position': {'x': 0.5, 'y': 0.33}},
@@ -220,10 +221,6 @@ def select_object(obj, select=True):
 
 class ControlPoints():
 
-    """ Handle the control points
-
-    """
-
     def __init__(self, control_set, height):
         self._control_set = control_set
         self.height = height
@@ -266,11 +263,12 @@ class ControlPoints():
             limits[indx].append(max(self.control_points_x[indx]))
         return limits
 
+
 BL_MAIN_OBJ_NAME = bpy.data.objects['ImportedMesh'].name
 BL_SHAPE_TOOL_OBJ_NAME = bpy.data.objects['ShapeBezierCurve'].name
 BL_SHAPE_PREVIEW_OBJ_NAME = BL_MAIN_OBJ_NAME
 
-print("------------------------ TEST ------------------- ")
+print("------------------------ Matrix Approach ------------------------ ")
 
 # class ApplyDrawnShapeOperator(bpy.types.Operator):
 """Apply the custom drawn shape to the mesh """
@@ -418,6 +416,9 @@ def execute():
     return {'FINISHED'}
 
 
+def test_height(h=15):
+    return  h
+
 def blend_curves(target_obj, shape_grid, middle_vertex_X, middle_vertex_Y, curveXdata=[], curveYdata=[]):
     """ Blend the user defined (X,Y) curves and store each vertex value in a dictionary.
 
@@ -427,7 +428,7 @@ def blend_curves(target_obj, shape_grid, middle_vertex_X, middle_vertex_Y, curve
 
     # curveXdata = json.loads(self.x_displacement)
     # curveYdata = json.loads(self.y_displacement)
-    height = 15
+    height = test_height()
 
     # Handle the no curves case
     if not(curveXdata and curveYdata):
@@ -490,9 +491,6 @@ def make_grid(obj):
     bm.verts.ensure_lookup_table()
     verts = [v for v in bm.verts if v.select]
 
-
-    shape_min, shape_max = get_shape_limits(verts)
-
     for v in verts:
         v.tag = True
     bmesh.update_edit_mesh(bpy.context.object.data)
@@ -501,50 +499,45 @@ def make_grid(obj):
     bpy.ops.object.vertex_group_select()
 
     bm = bmesh.from_edit_mesh(obj.data)
+    bm.verts.index_update()
     bm.verts.ensure_lookup_table()
     verts = [v for v in bm.verts if v.select]
 
     # Create an initial map of all vertices based on the shape limits
-    time_start = time.time()
-    sorted_initial_vert_map = create_shape_vertex_map(shape_min, shape_max, verts)
-    print("create_shape_vertex_map: %.4f sec" % (time.time() - time_start))
-
-    bmesh.update_edit_mesh(bpy.context.object.data)
-    bpy.ops.mesh.select_all(action='DESELECT')
-    obj.vertex_groups.active_index = obj.vertex_groups['shape_intersection_group'].index
-    bpy.ops.object.vertex_group_select()
-
-    bm = bmesh.from_edit_mesh(obj.data)
-    bm.verts.ensure_lookup_table()
+    sorted_initial_vert_map = get_shape_limits(verts)
 
     # Create the shape grid and sort by x-coordinate first
     shape_grid = {}
     inner_columns = {}
     outer_columns = {}
 
-    step = 0
-    for quadrant in sorted_initial_vert_map:
-        for indx, v in enumerate(quadrant):
-            if bm.verts[v].select:
-                shape_grid[v] = {"vertex": bm.verts[v],
-                                 "column": (indx+step),
-                                 "border_vertex": True}
-                outer_columns[(indx+step)] = {"vertex": bm.verts[v].index}
-                #print("Outer columns: {}".format(indx+step))
-            else:
-                shape_grid[v] = {"vertex": bm.verts[v],
-                                 "column": (indx+step),
-                                 "inner_vertex": True}
-                inner_columns[(indx+step)] = {"vertex": bm.verts[v].index}
-                #print("Inner columns: {}".format(indx+step))
-        step += (indx + 1)
+    for indx, v in enumerate(sorted_initial_vert_map):
+        if v.tag:
+            shape_grid[v.index] = {"vertex": v,
+                                   "column": indx,
+                                   "border_vertex": True}
+            outer_columns[indx] = {"vertex": v.index}
+        else:
+            shape_grid[v.index] = {"vertex": v,
+                                   "column": indx}
+            inner_columns[indx] = {"vertex": v.index}
 
     # Sort by z-coordinate
     verts_z = {v.index: v.co.z for v in verts}
     sorted_verts_z = sorted(verts_z, key=(lambda k: verts_z[k]), reverse=True)
 
+    no_key_err = ShapeToolAsserts.ERR_CODES.NO_KEY_ERROR
+    if (ShapeToolAsserts.check_dict_entries(sorted_verts_z, shape_grid) == no_key_err):
+        logger.error("Error occured, falling back to default extrusion")
+        x_displacement = str(0)
+        y_displacement = str(0)
+        smooth_amount = 5
+        return shape_grid, None, None
+
     inner_rows = {}
     outer_rows = {}
+
+    bm.verts.index_update()
 
     for indx, v in enumerate(sorted_verts_z):
         if bm.verts[v].tag:
@@ -565,7 +558,6 @@ def make_grid(obj):
     bpy.ops.object.vertex_group_select()
 
     bm = bmesh.from_edit_mesh(obj.data)
-    bm.verts.ensure_lookup_table()
     edges = [e for e in bm.edges if e.select]
     for v in bm.verts:
         v.select = False
@@ -581,11 +573,9 @@ def make_grid(obj):
         middle_columns = [column for column in range(column_A + 1, column_B)]
         middle_rows = [row for row in range(row_A + 1, row_B)]
 
-        visited = []
         for column in middle_columns:
             try:
                 vertex = shape_grid[inner_columns[column]['vertex']]
-                visited.append(vertex['vertex'].index)
             except KeyError:
                 pass
             else:
@@ -595,7 +585,6 @@ def make_grid(obj):
                     vertex['column_rows'].append(row_1)
                 else:
                     vertex.update(column_rows=[row_1])
-                    vertex['vertex'].select = True
         for row in middle_rows:
             try:
                 vertex = shape_grid[inner_rows[row]['vertex']]
@@ -615,13 +604,8 @@ def make_grid(obj):
             vertex = shape_grid[v]
             row_A = min(vertex['row_columns'])
             row_B = max(vertex['row_columns'])
-            try:
-                column_A = min(vertex['column_rows'])
-                column_B = max(vertex['column_rows'])
-            except KeyError:
-                print('ERROR')
-                print(vertex)
-                raise
+            column_A = min(vertex['column_rows'])
+            column_B = max(vertex['column_rows'])
             for column in vertex['row_columns']:
                 if column > vertex['column'] and column <= row_B:
                     row_B = column
@@ -755,16 +739,16 @@ def get_shape_limits(verts, offset=2):
             j = i
             h = j
             while j >=0:
-                sorted_verts.append(vtxmap[j].angle)
+                sorted_verts.append(vtxmap[j].bmvert)
                 j -= 1
             j = len(vtxmap)-1
             while j > h:
-                sorted_verts.append(vtxmap[j].angle)
+                sorted_verts.append(vtxmap[j].bmvert)
                 j -= 1
             break
     else: # we are in one or two quadrants...
         for i in range(0, len(vtxmap)):
-            sorted_verts.append(vtxmap[i].angle)
+            sorted_verts.append(vtxmap[i].bmvert)
 
     if Logger.LOGGER_ENABLED is True:
         for a in sorted_verts:
