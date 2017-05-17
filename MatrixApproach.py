@@ -57,6 +57,7 @@ class Logger:
     print("Open logger")
     def __del__(self):
         print("Closing logger")
+        f.flush()
         f.close()
 
     @staticmethod
@@ -791,6 +792,7 @@ def get_shape_limits(verts, offset=2):
 
 
 def clean_shape_loop(obj):
+
     """ Clean shape - edges at tight places, faces at sharp corners and
         hole pairs in the loop.
 
@@ -799,6 +801,14 @@ def clean_shape_loop(obj):
         Input:
         Output:
     """
+    def calc_distance(origin, vert):
+        """ Calculate Euclidean distance between two points
+
+            Input:  mathutils.Vector
+            Output: float
+        """
+        dx, dy, dz = vert[0] - origin[0], vert[1] - origin[1], vert[2] - origin[2]
+        return math.sqrt((dx * dx) + (dy * dy) + (dz * dz))
 
     bm = bmesh.from_edit_mesh(obj.data)
     bm.verts.ensure_lookup_table()
@@ -887,15 +897,6 @@ def clean_shape_loop(obj):
 
     bmesh.update_edit_mesh(obj.data)
 
-
-def calc_distance(origin, vert):
-    """ Calculate Euclidean distance between two points
-
-        Input:  mathutils.Vector
-        Output: float
-    """
-
-    return math.sqrt((vert[0] - origin[0])**2 + (vert[1] - origin[1])**2 + (vert[2] - origin[2])**2)
 
 
 def calculate_extrusion(data, curve, seq_type, middle_vertex):
