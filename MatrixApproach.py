@@ -1,4 +1,5 @@
 import bpy
+import bgl
 import bmesh
 import math
 import mathutils
@@ -6,7 +7,12 @@ import json
 import time
 from mathutils import Vector, Matrix
 import pdb as DBG
+
+from bpy_extras.object_utils import world_to_camera_view
+
+
 # exec(compile(open('/home/ilian/git-projects/blender-shapetool/MatrixApproach.py').read(), '/home/ilian/git-projects/blender-shapetool/MatrixApproach.py', 'exec'))
+
 
 # Utils
 #######################################################################################################################
@@ -92,6 +98,7 @@ class TestApplication(object):
 
 
 #######################################################################################################################
+
 def duplicate_object(obj, target_name, select=False, copy_vertex_groups=False, copy_custom_props=False, keep_transform=False):
     """ Creates duplicate of an object
     """
@@ -418,6 +425,23 @@ def execute():
     bpy.context.object.modifiers["Smooth"].factor = 0.5
     bpy.ops.object.mode_set(mode="OBJECT")
 
+    ############## test exporting zbuff to file ##############
+    #pixels = [bgl.Buffer(bgl.GL_BYTE, 1024 * 768),
+    #          bgl.Buffer(bgl.GL_BYTE, 1024 * 768),
+    #          bgl.Buffer(bgl.GL_BYTE, 1024 * 768)]
+    #bgl.glReadPixels(0, 0, 1024, 768, bgl.GL_RED, bgl.GL_BYTE, pixels[0])
+    #bgl.glReadPixels(0, 0, 1024, 768, bgl.GL_GREEN, bgl.GL_BYTE, pixels[1])
+    #bgl.glReadPixels(0, 0, 1024, 768, bgl.GL_BLUE, bgl.GL_BYTE, pixels[2])
+    #dmp = open("testfile.txt", "w")
+    #dmp.close()
+    #print(pixels[0])
+    bj = bpy.context.object
+    sensors = obj.game.sensors
+    controllers = obj.game.controllers
+    actuators = obj.game.actuators
+    bpy.ops.logic.sensor_add(type="ALWAYS", object=obj.name)
+    bpy.ops.logic.controller_add(type="LOGIC_AND", object=obj.name)
+    bpy.ops.logic.actuator_add(type="ACTION", object=obj.name)
     return {'FINISHED'}
 
 
