@@ -13,7 +13,6 @@ class SimpleOperator(bpy.types.Operator):
                 context.object.data.is_editmode)
 
     def invoke(self, context, event):
-        print("SimpleOperator")
         me = context.object.data
         bm = bmesh.from_edit_mesh(me)
         verts_sel = [v.select for v in bm.verts]
@@ -21,7 +20,6 @@ class SimpleOperator(bpy.types.Operator):
         faces_sel = [f.select for f in bm.faces]
 
         loc = event.mouse_region_x, event.mouse_region_y
-        print(loc)
 
         try:
             geom = bm.select_history[-1]
@@ -54,7 +52,7 @@ class SimpleOperator(bpy.types.Operator):
 
         for sel, g in zip(geom_sel, bm_geom):
             if sel != g.select:
-                g.select_set(True)
+                g.select_set(False)
                 bm.select_history.remove(g)
                 bm.select_flush_mode()
                 break
@@ -73,5 +71,4 @@ def unregister():
 
 
 if __name__ == "__main__":
-    print("Start main")
     register()
