@@ -72,7 +72,7 @@ def draw_square_follow_cursor(c, gmx, gmy):
     bgl.glVertex3f(mouse3d[0], mouse3d[1], mouse3d[2])
     #bgl.glVertex2f(gmx,gmy)
     bgl.glEnd()
-    
+
     # restore opengl defaults
     bgl.glLineWidth(1)
     bgl.glDisable(bgl.GL_BLEND)
