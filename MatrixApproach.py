@@ -1,5 +1,5 @@
 import bpy
-import bgl
+import bgl # opengl binder
 import bmesh
 import math
 import mathutils
@@ -71,6 +71,51 @@ class Logger:
         Logger.f.write(str(msg)+"\n")
         Logger.f.flush()
 
+# GL stuff
+
+class GLUtils(object):
+
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def getViewport():
+        view = bgl.Buffer(bgl.GL_INT, 4)
+        bgl.glGetIntegerv(bgl.GL_VIEWPORT, view)
+        return view
+
+    @staticmethod
+    def getProjectionMTX():
+        proj_mtx = bgl.Buffer(bgl.GL_DOUBLE, [4,4])
+        bgl.glGetDoublev(bgl.GL_PROJECTION_MATRIX, proj_mtx)
+        return  proj_mtx
+
+    @staticmethod
+    def getModelViewMTX():
+        mv_mtx = bgl.Buffer(bgl.GL_DOUBLE, [4, 4])
+        bgl.glGetDoublev(bgl.GL_MODELVIEW_MATRIX, mv_mtx)
+        return  mv_mtx
+
+
+    @staticmethod
+    def mouseCoordsTo3DView(mx, my):
+        depth = bgl.Buffer(bgl.GL_FLOAT, [0.0])
+        bgl.glReadPixels(mx, my, 1, 1, bgl.GL_DEPTH_COMPONENT, bgl.GL_FLOAT, depth)
+        # if (depth[0] != 1.0):
+        world_x = bgl.Buffer(bgl.GL_DOUBLE, 1, [0.0])
+        world_y = bgl.Buffer(bgl.GL_DOUBLE, 1, [0.0])
+        world_z = bgl.Buffer(bgl.GL_DOUBLE, 1, [0.0])
+        view1 = GLUtils.getViewport()
+        model = GLUtils.getModelViewMTX()
+        proj = GLUtils.getModelViewMTX()
+        bgl.gluUnProject(mx, my, depth[0],
+                         model, proj,
+                         view1,
+                         world_x, world_y, world_z)
+        return world_x[0], world_y[0], world_z[0]
+
+
+
 #######################################################################################################################
 class TestApplication(object):
 
@@ -92,12 +137,15 @@ class TestApplication(object):
                        'start': {'control': {'x': 0.75, 'y': 0.33},
                                  'position': {'x': 0.5, 'y': 0.33}}}]
 
+        coord = GLUtils.mouseCoordsTo3DView(200, 200)
+        print(coord)
+        raise
+
     def get_curveXY(self):
         return  self.curveXdata, self.curveYdata
 
-
-
 #######################################################################################################################
+
 
 def duplicate_object(obj, target_name, select=False, copy_vertex_groups=False, copy_custom_props=False, keep_transform=False):
     """ Creates duplicate of an object
