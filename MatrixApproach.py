@@ -137,9 +137,6 @@ class TestApplication(object):
                        'start': {'control': {'x': 0.75, 'y': 0.33},
                                  'position': {'x': 0.5, 'y': 0.33}}}]
 
-        coord = GLUtils.mouseCoordsTo3DView(200, 200)
-        print(coord)
-        raise
 
     def get_curveXY(self):
         return  self.curveXdata, self.curveYdata
